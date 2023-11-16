@@ -1,4 +1,3 @@
-# import allensdk.core.swc as swc
 from allensdk.core.swc import Compartment, Morphology, NODE_ID, NODE_TYPE, NODE_X, NODE_Y, NODE_Z, NODE_R, NODE_PN
 
 
