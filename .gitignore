@@ -1,2 +1,7 @@
-/testing
-/__pycache__
+testing/
+primate_uprighting/__pycache__/**
+*.pyc
+.eggs/
+.idea/
+.vscode/
+primate_uprighting/__pycache__/query.cpython-39.pyc
