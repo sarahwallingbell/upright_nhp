@@ -1,59 +1,60 @@
 import numpy as np
-import pandas as pd
-import allensdk.core.swc as swc
 from lims_utils import get_swc_from_lims
+from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
+from neuron_morphology.transforms.affine_transform import AffineTransform
+from morph_utils.modifications import normalize_position
 from query import query_lims_for_layers
-from morph import to_dict, dict_to_Morphology
 from fiducials import get_coords, convert_coords_str, upright_angle
 from geometry import line, intersection, find_translation, find_farthest, determine_mirror
 
-
-
-def upright_nrn(specimen_id, oout, uout, error_dict={}):
+def upright_nrn(specimen_id, oout=None, uout=None, error_dict={}, print_info=False):
     """ 
-    Upright one cell 
+    Upright one cell - save original to oout and upright to uout and return error_dict 
+    Final upright orientation has dorsal on top and medial on the right. 
 
     :param specimen_id: a cell specimen id
     :param oout: path to save original swc
     :param uout: path to save uprighted swc
     :param error_dict: dictionary to append message to if there's an error 
+    :param print_info: whether or not to print info
+    :return: morph, the uprighted morphology object or None if an error occured
     :return: error_dict, unchanged if no error has occured 
     """
 
     try:
-        print(specimen_id)
+        if print_info: print(specimen_id)
 
         ldf = query_lims_for_layers(specimen_id)
 
         try: soma_coords, pia_coords, wm_coords, layer_coords = get_coords(ldf, ["1", "2/3",  "4", "5", "6a", "6b"])
         except:
-            print("ERROR: Couldn't load layers for {}".format(specimen_id))
+            if print_info: print("ERROR: Couldn't load layers for {}".format(specimen_id))
             error_dict[specimen_id] = "Could not load layers"
-            return error_dict
+            return None, error_dict
 
-        try: swc_filename, swc_path = get_swc_from_lims(specimen_id)
+        try: _, swc_path = get_swc_from_lims(specimen_id)
         except TypeError:
-            print("ERROR: Could not get swc from lims for ", specimen_id)
+            if print_info: print("ERROR: Could not get swc from lims for ", specimen_id)
             error_dict[specimen_id] = "Could not get swc from lims"
-            return error_dict
+            return None, error_dict
         
         swc_path = swc_path.replace('\\', '/')
         swc_path = swc_path.replace('/', '//', 1)
-        morph = swc.read_swc(swc_path)
-        morph.write(oout)
+        morph = morphology_from_swc(swc_path)
+        if oout: morphology_to_swc(morph, oout)
 
         if soma_coords is None:
-            print("ERROR: No soma drawing for", specimen_id)
+            if print_info: print("ERROR: No soma drawing for", specimen_id)
             error_dict[specimen_id] = "No soma drawing"
-            return error_dict
+            return None, error_dict
         if pia_coords is None:
-            print("ERROR: No 'pia' drawing for", specimen_id)
+            if print_info: print("ERROR: No 'pia' drawing for", specimen_id)
             error_dict[specimen_id] = "No 'pia' drawing"
-            return error_dict
+            return None, error_dict
         if wm_coords is None:
-            print("ERROR: No 'white matter' drawing for", specimen_id)
+            if print_info: print("ERROR: No 'white matter' drawing for", specimen_id)
             error_dict[specimen_id] = "No 'white matter' drawing"
-            return error_dict
+            return None, error_dict
 
         #Edit 'Pia' coords
         row = ldf[ldf.draw_type == 'Pia']
@@ -87,31 +88,32 @@ def upright_nrn(specimen_id, oout, uout, error_dict={}):
         pia_coords['x'] = new_lx
         pia_coords['y'] = new_ly
 
+        #upright transform 
         theta, offset = upright_angle(layer_coords, soma_coords, pia_coords, wm_coords)
         theta += np.pi
-        soma_node = morph.compartment_list_by_type(1)[0]
-        aff = [1., 0., 0., 0., 1., 0., 0., 0., 1., -soma_node["x"], -soma_node["y"], -soma_node["z"]]
-        morph.apply_affine(aff)
+        morph = normalize_position(morph)
         aff = [np.cos(theta), -np.sin(theta), 0., np.sin(theta), np.cos(theta), 0., 0., 0., 1., 0., -offset, 0.]
-        morph.apply_affine(aff)
+        upright_transform = AffineTransform.from_list(aff)
+        morph = upright_transform.transform_morphology(morph)
 
-        print("\tsaving uprighted morph {}".format(specimen_id))
-        morph.save(uout)
+        hflip = determine_mirror(lint, plx, ply, lx, ly)
+        if hflip:
+            # horizontal flip (so medial is right side)
+            aff = [-1.,0.,0.,   0.,1.,0.,   0.,0.,1.,   0.,0.,0.]
+            hflip_transform = AffineTransform.from_list(aff)
+            morph = hflip_transform.transform_morphology(morph)
 
-        flip = determine_mirror(lint, plx, ply, lx, ly)
+        # vertical flip (so dorsal is on top)
+        aff = [1.,0.,0.,   0.,-1.,0.,   0.,0.,1.,   0.,0.,0.]
+        vflip_transform = AffineTransform.from_list(aff)
+        morph = vflip_transform.transform_morphology(morph)
 
-        if flip:
-            print("\tflipping morph {}".format(specimen_id))
-            mdict = to_dict(uout)
-            t = pd.DataFrame.from_dict(mdict).T
-            t.x = t.x * -1
-            tdict = t.to_dict(orient = 'index')
-            tmorph = dict_to_Morphology(tdict)
-            tmorph.save(uout)
-    
-        return error_dict
+        #save 
+        if uout: morphology_to_swc(morph, uout)
+
+        return morph, error_dict
     
     except:
-        print("ERROR: Unknown issue with cell {}", specimen_id)
+        if print_info: print("ERROR: Unknown issue with cell {}", specimen_id)
         error_dict[specimen_id] = "Unknown issue with this cell"
-        return error_dict
+        return None, error_dict

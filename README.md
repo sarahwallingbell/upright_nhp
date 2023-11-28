@@ -1,0 +1,1 @@
+Upright non human primate neurons that have dorsal and medial fiducials such that dorsal is on top and medial is on the right. 
