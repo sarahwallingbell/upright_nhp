@@ -1,4 +1,3 @@
-tests/
 primate_uprighting/__pycache__/**
 __pycache__/
 *.pyc
