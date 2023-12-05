@@ -1,22 +1,5 @@
 import pandas as pd
-# from morph_utils.query import default_query_engine
-
-
-import os
-import allensdk.internal.core.lims_utilities as lu
-from functools import partial
-
-def default_query_engine():
-    """Get Postgres query engine with environmental variable parameters"""
-
-    return partial(
-        lu.query,
-        # host=os.getenv("LIMS_HOST"),
-        # port=5432,
-        # database=os.getenv("LIMS_DBNAME"),
-        # user=os.getenv("LIMS_USER"),
-        # password=os.getenv("LIMS_PASSWORD")
-    )
+from morph_utils.query import default_query_engine
 
 def query_lims_for_layers(specimen_id, query_engine=None):
        
