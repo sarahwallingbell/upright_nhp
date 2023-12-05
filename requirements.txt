@@ -1,6 +1,0 @@
-numpy
-pandas
-argschema
-matplotlib
-neuron_morphology
-morph_utils 
