@@ -1,5 +1,5 @@
 import numpy as np
-from lims_utils import get_swc_from_lims
+from morph_utils.query import get_swc_from_lims
 from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
 from neuron_morphology.transforms.affine_transform import AffineTransform
 from morph_utils.modifications import normalize_position
