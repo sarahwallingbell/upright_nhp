@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "upright_nhp"
+version = "0.0.1"
+description = "Upright non-human primate morphologies."
+readme = "README.md"
+authors = [{ name = "Sarah Walling-Bell", email = "sarah.wallingbell@alleninstitute.org" }]
+license = { file = "LICENSE" }
+ 
+dependencies = ["numpy","pandas","scipy","neuron_morphology","morph_utils" ]
+ 
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/sarahwallingbell/upright_nhp.git"
+ 
