@@ -3,9 +3,9 @@ from morph_utils.query import get_swc_from_lims
 from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
 from neuron_morphology.transforms.affine_transform import AffineTransform
 from morph_utils.modifications import normalize_position
-from query import query_lims_for_layers
-from fiducials import get_coords, convert_coords_str, upright_angle
-from geometry import line, intersection, find_translation, find_farthest, determine_mirror
+from upright_utils.query import query_lims_for_layers
+from upright_utils.fiducials import get_coords, convert_coords_str, upright_angle
+from upright_utils.geometry import line, intersection, find_translation, find_farthest, determine_mirror
 
 def upright_nrn(specimen_id, oout=None, uout=None, error_dict={}, print_info=False):
     """ 
