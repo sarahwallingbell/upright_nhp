@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "upright_nhp"
-version = "0.0.1"
+version = "0.0.2"
 description = "Upright non-human primate morphologies."
 readme = "README.md"
 authors = [{ name = "Sarah Walling-Bell", email = "sarah.wallingbell@alleninstitute.org" }]
