@@ -3,16 +3,17 @@ from morph_utils.query import get_swc_from_lims
 from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
 from neuron_morphology.transforms.affine_transform import AffineTransform
 from morph_utils.modifications import normalize_position
-from upright_utils.query import query_lims_for_layers
-from upright_utils.fiducials import get_coords, convert_coords_str, upright_angle
-from upright_utils.geometry import line, intersection, find_translation, find_farthest, determine_mirror
+from upright_nhp.query import query_lims_for_layers
+from upright_nhp.fiducials import get_coords, convert_coords_str, upright_angle
+from upright_nhp.geometry import line, intersection, find_translation, find_farthest, determine_mirror
 
-def upright_nrn(specimen_id, oout=None, uout=None, error_dict={}, print_info=False):
+def upright_nrn(specimen_id, morph=None, oout=None, uout=None, error_dict={}, print_info=False):
     """ 
     Upright one cell - save original to oout and upright to uout and return error_dict 
     Final upright orientation has dorsal on top and medial on the right. 
 
     :param specimen_id: a cell specimen id
+    :param morph: a Morphology object to upright, otherwise looks for swc from lims
     :param oout: path to save original swc
     :param uout: path to save uprighted swc
     :param error_dict: dictionary to append message to if there's an error 
@@ -32,15 +33,16 @@ def upright_nrn(specimen_id, oout=None, uout=None, error_dict={}, print_info=Fal
             error_dict[specimen_id] = "Could not load layers"
             return None, error_dict
 
-        try: _, swc_path = get_swc_from_lims(specimen_id)
-        except TypeError:
-            if print_info: print("ERROR: Could not get swc from lims for ", specimen_id)
-            error_dict[specimen_id] = "Could not get swc from lims"
-            return None, error_dict
-        
-        swc_path = swc_path.replace('\\', '/')
-        swc_path = swc_path.replace('/', '//', 1)
-        morph = morphology_from_swc(swc_path)
+        if morph is None:
+            try: _, swc_path = get_swc_from_lims(specimen_id)
+            except TypeError:
+                if print_info: print("ERROR: Could not get swc from lims for ", specimen_id)
+                error_dict[specimen_id] = "Could not get swc from lims"
+                return None, error_dict
+            
+            swc_path = swc_path.replace('\\', '/')
+            swc_path = swc_path.replace('/', '//', 1)
+            morph = morphology_from_swc(swc_path)
         if oout: morphology_to_swc(morph, oout)
 
         if soma_coords is None:
